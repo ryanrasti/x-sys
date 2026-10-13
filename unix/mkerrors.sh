@@ -198,7 +198,9 @@ struct ltchars {
 };
 #endif
 
+#if __has_include(<bits/sockaddr.h>)
 #include <bits/sockaddr.h>
+#endif
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <sys/inotify.h>

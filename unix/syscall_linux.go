@@ -1546,7 +1546,7 @@ func KeyctlRestrictKeyring(ringid int, keyType string, restriction string) error
 
 func recvmsgRaw(fd int, iov []Iovec, oob []byte, flags int, rsa *RawSockaddrAny) (n, oobn int, recvflags int, err error) {
 	var msg Msghdr
-	msg.Name = (*byte)(unsafe.Pointer(rsa))
+	msg.setName(unsafe.Pointer(rsa))
 	msg.Namelen = uint32(SizeofSockaddrAny)
 	var dummy byte
 	if len(oob) > 0 {
@@ -1559,16 +1559,16 @@ func recvmsgRaw(fd int, iov []Iovec, oob []byte, flags int, rsa *RawSockaddrAny)
 			// receive at least one normal byte
 			if sockType != SOCK_DGRAM {
 				var iova [1]Iovec
-				iova[0].Base = &dummy
+				iova[0].setBase(&dummy)
 				iova[0].SetLen(1)
 				iov = iova[:]
 			}
 		}
-		msg.Control = &oob[0]
+		msg.setControl(&oob[0])
 		msg.SetControllen(len(oob))
 	}
 	if len(iov) > 0 {
-		msg.Iov = &iov[0]
+		msg.setIov(&iov[0])
 		msg.SetIovlen(len(iov))
 	}
 	if n, err = recvmsg(fd, &msg, flags); err != nil {
@@ -1581,7 +1581,7 @@ func recvmsgRaw(fd int, iov []Iovec, oob []byte, flags int, rsa *RawSockaddrAny)
 
 func sendmsgN(fd int, iov []Iovec, oob []byte, ptr unsafe.Pointer, salen _Socklen, flags int) (n int, err error) {
 	var msg Msghdr
-	msg.Name = (*byte)(ptr)
+	msg.setName(ptr)
 	msg.Namelen = uint32(salen)
 	var dummy byte
 	var empty bool
@@ -1596,16 +1596,16 @@ func sendmsgN(fd int, iov []Iovec, oob []byte, ptr unsafe.Pointer, salen _Sockle
 			// send at least one normal byte
 			if sockType != SOCK_DGRAM {
 				var iova [1]Iovec
-				iova[0].Base = &dummy
+				iova[0].setBase(&dummy)
 				iova[0].SetLen(1)
 				iov = iova[:]
 			}
 		}
-		msg.Control = &oob[0]
+		msg.setControl(&oob[0])
 		msg.SetControllen(len(oob))
 	}
 	if len(iov) > 0 {
-		msg.Iov = &iov[0]
+		msg.setIov(&iov[0])
 		msg.SetIovlen(len(iov))
 	}
 	if n, err = sendmsg(fd, &msg, flags); err != nil {
@@ -1747,14 +1747,14 @@ const elfNT_PRSTATUS = 1
 
 func PtraceGetRegs(pid int, regsout *PtraceRegs) (err error) {
 	var iov Iovec
-	iov.Base = (*byte)(unsafe.Pointer(regsout))
+	iov.setBase((*byte)(unsafe.Pointer(regsout)))
 	iov.SetLen(int(unsafe.Sizeof(*regsout)))
 	return ptracePtr(PTRACE_GETREGSET, pid, uintptr(elfNT_PRSTATUS), unsafe.Pointer(&iov))
 }
 
 func PtraceSetRegs(pid int, regs *PtraceRegs) (err error) {
 	var iov Iovec
-	iov.Base = (*byte)(unsafe.Pointer(regs))
+	iov.setBase((*byte)(unsafe.Pointer(regs)))
 	iov.SetLen(int(unsafe.Sizeof(*regs)))
 	return ptracePtr(PTRACE_SETREGSET, pid, uintptr(elfNT_PRSTATUS), unsafe.Pointer(&iov))
 }
@@ -2527,10 +2527,7 @@ func Pselect(nfd int, r *FdSet, w *FdSet, e *FdSet, timeout *Timespec, sigmask *
 		sigsetWords := (_C__NSIG - 1 + wordBits - 1) / (wordBits)
 
 		sigsetBytes := uintptr(sigsetWords * (wordBits / 8))
-		kernelMask = &sigset_argpack{
-			ss:    sigmask,
-			ssLen: sigsetBytes,
-		}
+		kernelMask = newSigsetArgpack(sigmask, sigsetBytes)
 	}
 
 	return pselect6(nfd, r, w, e, mutableTimeout, kernelMask)

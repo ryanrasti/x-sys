@@ -854,11 +854,6 @@ type SockFilter struct {
 	K    uint32
 }
 
-type SockFprog struct {
-	Len    uint16
-	Filter *SockFilter
-}
-
 type InotifyEvent struct {
 	Wd     int32
 	Mask   uint32
@@ -955,11 +950,6 @@ const (
 	POLLHUP  = 0x10
 	POLLNVAL = 0x20
 )
-
-type sigset_argpack struct {
-	ss    *Sigset_t
-	ssLen uintptr
-}
 
 type SignalfdSiginfo struct {
 	Signo     uint32
@@ -2538,13 +2528,6 @@ type RTCWkAlrm struct {
 	Enabled uint8
 	Pending uint8
 	Time    RTCTime
-}
-
-type BlkpgIoctlArg struct {
-	Op      int32
-	Flags   int32
-	Datalen int32
-	Data    *byte
 }
 
 const (
@@ -4379,11 +4362,6 @@ type (
 	EraseInfo64 struct {
 		Start  uint64
 		Length uint64
-	}
-	MtdOobBuf struct {
-		Start  uint32
-		Length uint32
-		Ptr    *uint8
 	}
 	MtdOobBuf64 struct {
 		Start  uint64

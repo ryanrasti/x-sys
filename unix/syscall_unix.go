@@ -363,7 +363,7 @@ func Recvfrom(fd int, p []byte, flags int) (n int, from Sockaddr, err error) {
 func Recvmsg(fd int, p, oob []byte, flags int) (n, oobn int, recvflags int, from Sockaddr, err error) {
 	var iov [1]Iovec
 	if len(p) > 0 {
-		iov[0].Base = &p[0]
+		iov[0].setBase(&p[0])
 		iov[0].SetLen(len(p))
 	}
 	var rsa RawSockaddrAny
@@ -384,10 +384,10 @@ func RecvmsgBuffers(fd int, buffers [][]byte, oob []byte, flags int) (n, oobn in
 	iov := make([]Iovec, len(buffers))
 	for i := range buffers {
 		if len(buffers[i]) > 0 {
-			iov[i].Base = &buffers[i][0]
+			iov[i].setBase(&buffers[i][0])
 			iov[i].SetLen(len(buffers[i]))
 		} else {
-			iov[i].Base = (*byte)(unsafe.Pointer(&_zero))
+			iov[i].setBase((*byte)(unsafe.Pointer(&_zero)))
 		}
 	}
 	var rsa RawSockaddrAny
@@ -435,7 +435,7 @@ func Sendmsg(fd int, p, oob []byte, to Sockaddr, flags int) (err error) {
 func SendmsgN(fd int, p, oob []byte, to Sockaddr, flags int) (n int, err error) {
 	var iov [1]Iovec
 	if len(p) > 0 {
-		iov[0].Base = &p[0]
+		iov[0].setBase(&p[0])
 		iov[0].SetLen(len(p))
 	}
 	var ptr unsafe.Pointer
@@ -456,10 +456,10 @@ func SendmsgBuffers(fd int, buffers [][]byte, oob []byte, to Sockaddr, flags int
 	iov := make([]Iovec, len(buffers))
 	for i := range buffers {
 		if len(buffers[i]) > 0 {
-			iov[i].Base = &buffers[i][0]
+			iov[i].setBase(&buffers[i][0])
 			iov[i].SetLen(len(buffers[i]))
 		} else {
-			iov[i].Base = (*byte)(unsafe.Pointer(&_zero))
+			iov[i].setBase((*byte)(unsafe.Pointer(&_zero)))
 		}
 	}
 	var ptr unsafe.Pointer

@@ -22,9 +22,9 @@ func appendBytes(vecs []Iovec, bs [][]byte) []Iovec {
 		var v Iovec
 		v.SetLen(len(b))
 		if len(b) > 0 {
-			v.Base = &b[0]
+			v.setBase(&b[0])
 		} else {
-			v.Base = (*byte)(unsafe.Pointer(&_zero))
+			v.setBase((*byte)(unsafe.Pointer(&_zero)))
 		}
 		vecs = append(vecs, v)
 	}
@@ -41,7 +41,7 @@ func writevRaceDetect(iovecs []Iovec, n int) {
 		m := min(int(iovecs[i].Len), n)
 		n -= m
 		if m > 0 {
-			raceReadRange(unsafe.Pointer(iovecs[i].Base), m)
+			raceReadRange(iovecs[i].base(), m)
 		}
 	}
 }
@@ -56,7 +56,7 @@ func readvRaceDetect(iovecs []Iovec, n int, err error) {
 		m := min(int(iovecs[i].Len), n)
 		n -= m
 		if m > 0 {
-			raceWriteRange(unsafe.Pointer(iovecs[i].Base), m)
+			raceWriteRange(iovecs[i].base(), m)
 		}
 	}
 	if err == nil {
