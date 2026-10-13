@@ -5,12 +5,8 @@
 package unix
 
 import (
-	"syscall"
 	"unsafe"
 )
-
-var _ syscall.Errno
-var _ unsafe.Pointer
 
 func wait4(pid int, wstatus *_C_int, options int, rusage *Rusage) (wpid int, err error) {
 	r0, _, e1 := Syscall6(SYS_WAIT4, uintptr(pid), uintptr(unsafe.Pointer(wstatus)), uintptr(options), uintptr(unsafe.Pointer(rusage)), 0, 0)
