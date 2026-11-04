@@ -4,7 +4,7 @@
 
 //go:build wasm && linux
 
-// linux-workers: LKL's wasm32 processes (as Go's syscall's, which explains
+// linux-workers: a wasm32 Linux's processes (as Go's syscall's, which explains
 // them: go/src/syscall/syscall_linux_wasm.go). The asm-generic system calls
 // for 32 bits, with riscv32's choices: no 32-bit time calls (the _time64
 // ones, under the names the generic code knows), stat only as statx, the

@@ -3,7 +3,7 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
-# linux-workers: the generated files for linux/wasm, LKL's wasm32 processes
+# linux-workers: the generated files for linux/wasm, a wasm32 Linux's processes
 # (as Go's syscall's: go/src/syscall/mkall_linux_wasm.sh, which explains the
 # stand-in C compiler). Then mkmerge's work, for one more architecture:
 # what zerrors_linux.go, ztypes_linux.go and zsyscall_linux.go already have
