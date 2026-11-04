@@ -1095,14 +1095,6 @@ func MoveMount(fromDirfd int, fromPathName string, toDirfd int, toPathName strin
 	return
 }
 
-func Nanosleep(time *Timespec, leftover *Timespec) (err error) {
-	_, _, e1 := Syscall(SYS_NANOSLEEP, uintptr(unsafe.Pointer(time)), uintptr(unsafe.Pointer(leftover)), 0)
-	if e1 != 0 {
-		err = errnoErr(e1)
-	}
-	return
-}
-
 func OpenTree(dfd int, fileName string, flags uint) (r int, err error) {
 	var _p0 *byte
 	_p0, err = BytePtrFromString(fileName)

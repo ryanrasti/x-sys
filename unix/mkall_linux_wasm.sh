@@ -47,18 +47,38 @@ enum {
 COMPAT
 go run linux/mkwasm.go abi "$CC" > "$shim/include/abi/abi.h"
 
-GOARCH_TARGET=wasm GOOS=linux go run linux/mksysnum.go "$SYSROOT_INCLUDE/bits/syscall.h" > "$out/zsysnum_linux_wasm.go"
+# musl's numbers, as the 32-bit ABI names them (as syscall's: see its
+# mkall_linux_wasm.sh), but the 32-bit time calls, whose structs aren't
+# ours: syscall_linux_wasm.go makes the generic code's names for them the
+# _time64 calls'
+time32="adjtimex clock_adjtime clock_getres clock_gettime clock_nanosleep clock_settime futex
+	gettimeofday io_getevents io_pgetevents mq_timedreceive mq_timedsend nanosleep ppoll pselect6
+	recvmmsg rt_sigtimedwait sched_rr_get_interval semtimedop settimeofday timerfd_gettime
+	timerfd_settime timer_gettime timer_settime utimensat wait4"
+names=$(sed -n 's/^#define \(__NR_[a-z0-9_]*\) .*/\1/p' "$SYSROOT_INCLUDE/bits/syscall.h" |
+	grep -vxF -e __NR_syscalls $(printf -- '-e __NR_%s ' $time32))
+{
+	echo "#include <stdio.h>"
+	echo "#include \"$SYSROOT_INCLUDE/bits/syscall.h\""
+	echo "int main(void) {"
+	for n in $names; do echo "printf(\"#define $n %d\\n\", $n);"; done
+	echo "return 0; }"
+} > "$shim/sysnum.c"
+"${HOSTCC:-cc}" -o "$shim/sysnum" "$shim/sysnum.c"
+"$shim/sysnum" > "$shim/syscall.h"
+GOARCH_TARGET=wasm GOOS=linux go run linux/mksysnum.go "$shim/syscall.h" |
+	sed "1s|$shim/syscall.h|bits/syscall.h (musl's, resolved: mkall_linux_wasm.sh)|" > "$out/zsysnum_linux_wasm.go"
 # GOARCH=riscv: cgo's 32-bit view of the C types (see syscall's)
 GOOS=linux GOARCH=riscv ./mkerrors.sh | sed 's/^\/\/go:build riscv && linux$/\/\/go:build wasm \&\& linux/' > "$out/zerrors_linux_wasm.go"
 GOOS=linux GOARCH=riscv go tool cgo -godefs -objdir="$out/cgo" -- linux/types.go | GOOS_TARGET=linux GOARCH_TARGET=wasm go run mkpost.go > "$out/ztypes_linux_wasm.go"
 # (the calls linux/wasm has its own of: out of the common file)
-go run linux/mkwasm.go split zsyscall_linux.go zsyscall_linux_nowasm.go munmap wait4 Adjtimex ClockAdjtime Settimeofday
+go run linux/mkwasm.go split zsyscall_linux.go zsyscall_linux_nowasm.go munmap wait4 Adjtimex ClockAdjtime Settimeofday Nanosleep
 for f in zerrors ztypes; do
 	go run linux/mkwasm.go merge "$out/${f}_linux_wasm.go" zerrors_linux.go ztypes_linux.go zsyscall_linux.go
 done
 # the system calls (syscall_linux.go's that linux/wasm has its own of,
 # in syscall_linux_wasm.go, aside: munmap, and those of 32-bit time)
-grep -Ev '^//sys(nb)?	(munmap|wait4|Adjtimex|ClockAdjtime|Settimeofday)\(' syscall_linux.go > "$shim/syscall_linux.go"
+grep -Ev '^//sys(nb)?	(munmap|wait4|Adjtimex|ClockAdjtime|Settimeofday|Nanosleep)\(' syscall_linux.go > "$shim/syscall_linux.go"
 cp syscall_linux_wasm.go "$shim/"
 (cd "$shim" && GOOS_TARGET=linux GOARCH_TARGET=wasm go run "$OLDPWD/mksyscall.go" -l32 -tags linux,wasm syscall_linux.go syscall_linux_wasm.go) > "$out/zsyscall_linux_wasm.go"
 go run linux/mkwasm.go merge "$out/zsyscall_linux_wasm.go" zsyscall_linux.go zsyscall_linux_nowasm.go

@@ -6,8 +6,11 @@
 package unix
 
 import (
+	"syscall"
 	"unsafe"
 )
+
+var _ syscall.Errno
 
 func fanotifyMark(fd int, flags uint, mask uint64, dirFd int, pathname *byte) (err error) {
 	_, _, e1 := Syscall6(SYS_FANOTIFY_MARK, uintptr(fd), uintptr(flags), uintptr(mask), uintptr(mask>>32), uintptr(dirFd), uintptr(unsafe.Pointer(pathname)))
@@ -208,8 +211,8 @@ func statfs64(path string, size int, buf *Statfs_t) (err error) {
 	return
 }
 
-func SyncFileRange(fd int, off int64, n int64, flags int) (err error) {
-	_, _, e1 := Syscall6(SYS_SYNC_FILE_RANGE, uintptr(fd), uintptr(off), uintptr(off>>32), uintptr(n), uintptr(n>>32), uintptr(flags))
+func syncFileRange2(fd int, flags int, off int64, n int64) (err error) {
+	_, _, e1 := Syscall6(SYS_SYNC_FILE_RANGE2, uintptr(fd), uintptr(flags), uintptr(off), uintptr(off>>32), uintptr(n), uintptr(n>>32))
 	if e1 != 0 {
 		err = errnoErr(e1)
 	}

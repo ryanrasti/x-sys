@@ -38,7 +38,7 @@ import (
 //sys	Shutdown(fd int, how int) (err error)
 //sys	Splice(rfd int, roff *int64, wfd int, woff *int64, len int, flags int) (n int64, err error)
 //sys	statfs64(path string, size int, buf *Statfs_t) (err error) = SYS_STATFS64
-//sys	SyncFileRange(fd int, off int64, n int64, flags int) (err error)
+//sys	syncFileRange2(fd int, flags int, off int64, n int64) (err error) = SYS_SYNC_FILE_RANGE2
 //sys	Truncate(path string, length int64) (err error) = SYS_TRUNCATE64
 //sys	accept4(s int, rsa *RawSockaddrAny, addrlen *_Socklen, flags int) (fd int, err error)
 //sys	bind(s int, addr unsafe.Pointer, addrlen _Socklen) (err error)
@@ -81,6 +81,22 @@ const (
 	SYS_SCHED_RR_GET_INTERVAL = SYS_SCHED_RR_GET_INTERVAL_TIME64
 	SYS_FUTEX                 = SYS_FUTEX_TIME64
 )
+
+// The kernel's sync_file_range is sync_file_range2 (asm-generic's for
+// 32-bit ABIs): the same call, its arguments in another order.
+func SyncFileRange(fd int, off int64, n int64, flags int) error {
+	return syncFileRange2(fd, flags, off, n)
+}
+
+// nanosleep, by clock_nanosleep on CLOCK_REALTIME (musl's): nanosleep is
+// 32-bit time's
+func Nanosleep(time *Timespec, leftover *Timespec) (err error) {
+	_, _, e := Syscall6(SYS_CLOCK_NANOSLEEP_TIME64, CLOCK_REALTIME, 0, uintptr(unsafe.Pointer(time)), uintptr(unsafe.Pointer(leftover)), 0, 0)
+	if e != 0 {
+		return errnoErr(e)
+	}
+	return nil
+}
 
 func Fstatfs(fd int, buf *Statfs_t) error {
 	return fstatfs64(fd, int(unsafe.Sizeof(*buf)), buf)
